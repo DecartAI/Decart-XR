@@ -44,18 +44,18 @@ namespace SimpleWebRTC {
         private bool startWebRTCUpdate;
         private bool stopWebRTCUpdate;
 
-        // Frame rate control for 16fps streaming
-        private float frameInterval = 1f / 16f; // 16fps
-        private float lastFrameTime = 0f;
+        // Frame rate control for streaming
+//        private float frameInterval = 1f / 12f; // 12 fps
+//        private float lastFrameTime = 0f;
 
-        // Startup optimization variables
-        private bool isInStartupPhase = false;
-        private float startupTimer = 0f;
-        private const float STARTUP_DURATION = 3f; // 3 seconds of startup optimization
+        // OPTIONAL: Startup optimization variables (commented to match API-Example.html simplicity)
+        // private bool isInStartupPhase = false;
+        // private float startupTimer = 0f;
+        // private const float STARTUP_DURATION = 3f; // 3 seconds of startup optimization
 
 
         [Header("Connection Setup")]
-        [SerializeField] private string WebSocketServerAddress = "wss://unity-webrtc-signaling.glitch.me";
+        [SerializeField] private string WebSocketServerAddress = "wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage";
         [SerializeField] private string StunServerAddress = "stun:stun.l.google.com:19302";
         [SerializeField] private string LocalPeerId = "PeerId";
         [SerializeField] private bool IsVideoAudioSender = true;
@@ -86,7 +86,7 @@ namespace SimpleWebRTC {
 
         [Header("Video Transmission")]
         [SerializeField] private bool StartStopVideoTransmission = false;
-        [SerializeField] private Vector2Int VideoResolution = new Vector2Int(1280, 720);
+        [SerializeField] private Vector2Int VideoResolution = new Vector2Int(1280, 720); // Matches API-Example.html (changed from 704)
         [SerializeField] private Camera StreamingCamera;
         public RawImage OptionalPreviewRawImage;
         [SerializeField] private RectTransform ReceivingRawImagesParent;
@@ -154,9 +154,8 @@ namespace SimpleWebRTC {
 
 
         private void Update() {
-            #if USE_NATIVEWEBSOCKET && (!UNITY_WEBGL || UNITY_EDITOR)
+            // Always dispatch for local NativeWebSocket
             webRTCManager.DispatchMessageQueue();
-            #endif
 
             if (SimpleWebRTCLogger.EnableLogging != ShowLogs) {
                 SimpleWebRTCLogger.EnableLogging = ShowLogs;
@@ -167,15 +166,15 @@ namespace SimpleWebRTC {
             StartWebRTCUpdate();
             StopWebRTCUpdate();
 
-            // Handle startup optimization phase
-            if (isInStartupPhase && IsVideoTransmissionActive) {
-                startupTimer += Time.deltaTime;
-                if (startupTimer >= STARTUP_DURATION) {
-                    OptimizeEncodingAfterStartup();
-                    isInStartupPhase = false;
-                    SimpleWebRTCLogger.Log("DEBUG: Startup phase completed, optimized encoding parameters");
-                }
-            }
+            // OPTIONAL: Startup optimization phase (commented to match API-Example.html simplicity)
+            // if (isInStartupPhase && IsVideoTransmissionActive) {
+            //     startupTimer += Time.deltaTime;
+            //     if (startupTimer >= STARTUP_DURATION) {
+            //         OptimizeEncodingAfterStartup();
+            //         isInStartupPhase = false;
+            //         SimpleWebRTCLogger.Log("DEBUG: Startup phase completed, optimized encoding parameters");
+            //     }
+            // }
 
             ConnectClient();
 
@@ -357,40 +356,36 @@ namespace SimpleWebRTC {
             StartStopVideoTransmission = true;
             IsVideoTransmissionActive = true;
 
-            // Enable startup optimization phase
-            isInStartupPhase = true;
-            startupTimer = 0f;
+            // OPTIONAL: Enable startup optimization phase (commented to match API-Example.html simplicity)
+            // isInStartupPhase = true;
+            // startupTimer = 0f;
 
-            SimpleWebRTCLogger.Log("DEBUG: Video transmission marked as active, starting optimization phase");
+            SimpleWebRTCLogger.Log("DEBUG: Video transmission marked as active");
 
-            // Allow encoder to warm up before creating offer to reduce startup lag
+            // Create offer immediately (matches API-Example.html approach)
             StartCoroutine(CreateOfferWithWarmup());
         }
 
         public IEnumerator CreateOffer() {
                     SimpleWebRTCLogger.Log("Creating offer");
 
-                    // enforce unified codec profiles and set low-latency parameters
+                    // Enforce VP8 codec (matches API-Example.html VP8 preference)
                     var transceivers = webRTCManager.pc.GetTransceivers();
                     foreach (var transceiver in transceivers) {
                         if (transceiver.Sender != null && transceiver.Sender?.Track?.Kind == TrackKind.Video) {
                             var vp8 = RTCRtpSender.GetCapabilities(TrackKind.Video).codecs.Where(c => c.mimeType == "video/VP8").ToArray();
                             transceiver.SetCodecPreferences(vp8);
 
-                            // Set aggressive startup encoding parameters for faster stabilization
-                            var parameters = transceiver.Sender.GetParameters();
-                            foreach (var encoding in parameters.encodings) {
-                                // Start with very high bitrate for instant quality (4Mbps) - using correct nullable ulong type
-                                encoding.maxBitrate = 4000000UL;
-                                // Force higher quality during startup - using correct nullable double type
-                                encoding.scaleResolutionDownBy = 1.0;
-                                // Set framerate to match our 16fps target - using correct nullable uint type
-                                encoding.maxFramerate = 16U;
-                                // Force keyframes more frequently during startup for faster adaptation
-                                encoding.minBitrate = 1000000UL; // Minimum 1Mbps
-                            }
-                            transceiver.Sender.SetParameters(parameters);
-                            SimpleWebRTCLogger.Log("Set aggressive startup VP8 encoding parameters - 4Mbps max");
+                            // Manual encoding parameters and FPS control
+                             var parameters = transceiver.Sender.GetParameters();
+                             foreach (var encoding in parameters.encodings) {
+                                 encoding.maxBitrate = 4000000UL;      // 4Mbps max
+                                 encoding.minBitrate = 1000000UL;      // 1Mbps min
+                                 encoding.maxFramerate = 30U;          // 30fps (changed from 16fps to match API example)
+                                 encoding.scaleResolutionDownBy = 1.0; // No downscaling
+                             }
+                             transceiver.Sender.SetParameters(parameters);
+                             SimpleWebRTCLogger.Log("Set manual encoding parameters");
                         }
                     }
 
@@ -413,7 +408,6 @@ namespace SimpleWebRTC {
                             sdp = offerSessionDesc.sdp
                         };
                         webRTCManager.ws.SendText(JsonUtility.ToJson(offerMessage));
-                        SimpleWebRTCLogger.Log("offer message is: " + JsonUtility.ToJson(offerMessage));
                         // EnqueueWebSocketMessage(SignalingMessageType.OFFER, localPeerId, peerConnection.Key, offerSessionDesc.ConvertToJSON());
                     } else {
                         Debug.LogError($" Failed create offer . {offer.Error.message}");
@@ -427,21 +421,21 @@ namespace SimpleWebRTC {
         }
 
         private IEnumerator CreateOfferWithWarmup() {
-            // Give the video encoder time to initialize and stabilize but reduce wait time
-            SimpleWebRTCLogger.Log("DEBUG: Quick encoder warmup...");
-            yield return new WaitForSeconds(0.05f); // Just 50ms for immediate response
+            // OPTIONAL: Encoder warmup (commented to match API-Example.html immediate approach)
+            // SimpleWebRTCLogger.Log("DEBUG: Quick encoder warmup...");
+            // yield return new WaitForSeconds(0.05f); // Just 50ms for immediate response
 
-            // Force a few frames to be encoded to prime the encoder
-            if (videoStreamTrack != null && StreamingCamera != null) {
-                // Trigger several immediate renders to warm up the encoder pipeline
-                for (int i = 0; i < 3; i++) {
-                    StreamingCamera.Render();
-                    yield return null;
-                }
-                SimpleWebRTCLogger.Log("DEBUG: Encoder primed with initial frames");
-            }
+            // // Force a few frames to be encoded to prime the encoder
+            // if (videoStreamTrack != null && StreamingCamera != null) {
+            //     // Trigger several immediate renders to warm up the encoder pipeline
+            //     for (int i = 0; i < 3; i++) {
+            //         StreamingCamera.Render();
+            //         yield return null;
+            //     }
+            //     SimpleWebRTCLogger.Log("DEBUG: Encoder primed with initial frames");
+            // }
 
-            // Now create the offer with a primed encoder
+            // Create offer immediately (matches API-Example.html)
             yield return StartCoroutine(CreateOffer());
         }
 
@@ -498,25 +492,26 @@ namespace SimpleWebRTC {
 //            }
         }
 
-        private void OptimizeEncodingAfterStartup() {
-            if (webRTCManager?.pc == null) return;
+        // OPTIONAL: Post-startup encoding optimization (commented to match API-Example.html simplicity)
+        // private void OptimizeEncodingAfterStartup() {
+        //     if (webRTCManager?.pc == null) return;
 
-            var transceivers = webRTCManager.pc.GetTransceivers();
-            foreach (var transceiver in transceivers) {
-                if (transceiver.Sender != null && transceiver.Sender?.Track?.Kind == TrackKind.Video) {
-                    var parameters = transceiver.Sender.GetParameters();
-                    foreach (var encoding in parameters.encodings) {
-                        // Reduce to stable bitrate after startup (2Mbps max, 500Kbps min)
-                        encoding.maxBitrate = 2000000UL;
-                        encoding.minBitrate = 500000UL;
-                        // Allow WebRTC to adapt resolution if needed
-                        encoding.scaleResolutionDownBy = null;
-                    }
-                    transceiver.Sender.SetParameters(parameters);
-                    SimpleWebRTCLogger.Log("Optimized encoding parameters after startup phase");
-                }
-            }
-        }
+        //     var transceivers = webRTCManager.pc.GetTransceivers();
+        //     foreach (var transceiver in transceivers) {
+        //         if (transceiver.Sender != null && transceiver.Sender?.Track?.Kind == TrackKind.Video) {
+        //             var parameters = transceiver.Sender.GetParameters();
+        //             foreach (var encoding in parameters.encodings) {
+        //                 // Reduce to stable bitrate after startup (2Mbps max, 500Kbps min)
+        //                 encoding.maxBitrate = 2000000UL;
+        //                 encoding.minBitrate = 500000UL;
+        //                 // Allow WebRTC to adapt resolution if needed
+        //                 encoding.scaleResolutionDownBy = null;
+        //             }
+        //             transceiver.Sender.SetParameters(parameters);
+        //             SimpleWebRTCLogger.Log("Optimized encoding parameters after startup phase");
+        //         }
+        //     }
+        // }
 
         public void SendNextPrompt(bool forward) {
             if (webRTCManager != null) {

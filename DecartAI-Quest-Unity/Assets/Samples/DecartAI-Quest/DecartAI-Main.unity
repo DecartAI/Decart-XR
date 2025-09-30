@@ -1895,7 +1895,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cc5c234723e3a54d8dd09b131117743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _meshType: 4
+  _meshType: 0
 --- !u!114 &647752536
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1926,7 +1926,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _skeletonType: 4
+  _skeletonType: 0
   _updateRootPose: 0
   _updateRootScale: 1
   _enablePhysicsCapsules: 0
@@ -3063,7 +3063,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cc5c234723e3a54d8dd09b131117743, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _meshType: 5
+  _meshType: 1
 --- !u!114 &1145641733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3094,7 +3094,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _skeletonType: 5
+  _skeletonType: 1
   _updateRootPose: 0
   _updateRootScale: 1
   _enablePhysicsCapsules: 0
@@ -3955,7 +3955,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e933e81d3c20c74ea6fdc708a67e3a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useRecommendedMSAALevel: 1
   _monoscopic: 0
   _sharpenType: 0
   _enableDynamicResolution: 1
@@ -5088,7 +5087,7 @@ MonoBehaviour:
   PromptNameUpdated:
     m_PersistentCalls:
       m_Calls: []
-  WebSocketServerAddress: wss://bouncer.mirage.decart.ai/ws?model=decart-v2v-v2.0-704p
+  WebSocketServerAddress: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage
   StunServerAddress: stun:stun.l.google.com:19302
   LocalPeerId: Quest-PeerId
   IsVideoAudioSender: 1
@@ -5113,7 +5112,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   StartStopVideoTransmission: 1
-  VideoResolution: {x: 1280, y: 704}
+  VideoResolution: {x: 1280, y: 720}
   StreamingCamera: {fileID: 135406155566937053}
   OptionalPreviewRawImage: {fileID: 0}
   ReceivingRawImagesParent: {fileID: 1635666935}

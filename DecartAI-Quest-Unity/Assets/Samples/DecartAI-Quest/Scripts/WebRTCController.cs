@@ -74,6 +74,7 @@ namespace QuestCameraKit.WebRTC {
             }
 
         private void Update() {
+            // Quest controller inputs
             if (OVRInput.GetDown(OVRInput.Button.One)) {
                 Debug.Log("WebRTC: A button pressed - Sending next prompt");
                 if (_webRTCConnection != null) {
@@ -105,4 +106,5 @@ namespace QuestCameraKit.WebRTC {
 
         }
     }
+
 }

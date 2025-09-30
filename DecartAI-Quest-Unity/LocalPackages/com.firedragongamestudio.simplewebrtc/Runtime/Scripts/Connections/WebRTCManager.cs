@@ -1,8 +1,5 @@
-#if !USE_NATIVEWEBSOCKET
-using Meta.Net.NativeWebSocket;
-#else
+// Always use local NativeWebSocket package from LocalPackages/
 using NativeWebSocket;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -17,14 +14,7 @@ using UnityEngine.UI;
 
 namespace SimpleWebRTC {
     public class WebRTCManager {
-        [Serializable]
-        public class outboundInitMessage {
-            public string type;
-            public int fps;
-            public string session_id;
-            public string prompt;
-            public string product;
-        }
+        // outboundInitMessage class removed - not needed for new API
         [Serializable]
         public class outboundOfferMessage {
             public string type;
@@ -43,10 +33,16 @@ namespace SimpleWebRTC {
         }
 
         [Serializable]
-        public class outboundCandidateInitMessage {
-              public string sdpMid;
-              public int sdpMLineIndex;
-              public string candidate;
+        public class ICECandidateData {
+            public string candidate;
+            public string sdpMid;
+            public int sdpMLineIndex;
+        }
+
+        [Serializable]
+        public class outboundICECandidateMessage {
+            public string type;
+            public ICECandidateData candidate;
         }
 
         [Serializable]
@@ -83,6 +79,7 @@ namespace SimpleWebRTC {
         private readonly string localPeerId;
         private readonly string stunServerAddress;
         private readonly WebRTCConnection connectionGameObject;
+        private string currentWebSocketUrl;
 
         private static string sessionId = Guid.NewGuid().ToString();
 //        private static string sessionId = "00000000-0000-0000-0000-000000000000";
@@ -170,42 +167,29 @@ namespace SimpleWebRTC {
                 await ws.Close();
             }
             ws = new WebSocket(webSocketUrl);
+            currentWebSocketUrl = webSocketUrl;  // Store for logging
             ws.OnOpen += () => {
                 SimpleWebRTCLogger.Log("WebSocket connection opened!");
-
 
                 IsWebSocketConnected = true;
                 IsWebSocketConnectionInProgress = false;
 
                 OnWebSocketConnection?.Invoke(WebSocketState.Open);
 
-
-//                    sessionId = Guid.NewGuid().ToString();
-                //init message
-                var initMessage = new outboundInitMessage {
-                    type = "initialize_session",
-                    fps = 16,
-                    session_id=sessionId,
-                    product="miragevr",
-                    prompt="Semi-Realistic World"
-                };
+                // No initialization message needed for new API - removed initialize_session
+                // New API format matches API-Example.html: connect then immediately start WebRTC offer/answer
                 try{
                     if(ws != null){
-                        SimpleWebRTCLogger.Log("Init message sent");
-                        ws.SendText(JsonUtility.ToJson(initMessage));
                         CreateNewPeerVideoAudioReceivingResources(sessionId);
                         SetupPeerConnection();
                         SimpleWebRTCLogger.Log($"NEWPEER: Created new peerconnection {localPeerId} on peer {localPeerId}");
-
-                        // send ACK to all clients to reach convergence
-                        // EnqueueWebSocketMessage(SignalingMessageType.NEWPEERACK, localPeerId, "ALL", "New peer ACK", peerConnections.Count, isLocalPeerVideoAudioSender);
                     }
                     else{
                         SimpleWebRTCLogger.LogError("WebSocket is null");
                     }
                 }
                 catch(Exception e){
-                    SimpleWebRTCLogger.LogError("Error sending init message: " + e.Message);
+                    SimpleWebRTCLogger.LogError("Error in connection setup: " + e.Message);
                 }
             };
 
@@ -251,51 +235,32 @@ namespace SimpleWebRTC {
 
         private void SetupEventHandlers() {
             pc.OnIceCandidate = candidate => {
-                SimpleWebRTCLogger.Log($"Local ICE candidate generated: {candidate.Candidate}");
-                var candidateInit = new outboundCandidateInitMessage {
-                    sdpMid = candidate.SdpMid,
-                    sdpMLineIndex = candidate.SdpMLineIndex ?? 0,
-                    candidate = candidate.Candidate
+                // New API format: match API-Example.html ICE candidate structure
+                var candidateMessage = new outboundICECandidateMessage {
+                    type = "ice-candidate",
+                    candidate = new ICECandidateData {
+                        candidate = candidate.Candidate,
+                        sdpMid = candidate.SdpMid,
+                        sdpMLineIndex = candidate.SdpMLineIndex ?? 0
+                    }
                 };
-                ws.SendText(JsonUtility.ToJson(candidateInit));
+                ws.SendText(JsonUtility.ToJson(candidateMessage));
             };
 
             pc.OnIceConnectionChange = state => {
                 SimpleWebRTCLogger.Log($"{localPeerId} connection changed to {state}");
 
-                // Add detailed logging for each ICE state
                 switch(state) {
-                    case RTCIceConnectionState.New:
-                        SimpleWebRTCLogger.Log($"ICE New - gathering candidates");
-                        break;
-                    case RTCIceConnectionState.Checking:
-                        SimpleWebRTCLogger.Log($"ICE Checking - testing connectivity");
-                        break;
-                    case RTCIceConnectionState.Connected:
-                        SimpleWebRTCLogger.Log($"ICE Connected - at least one pair working");
-                        break;
                     case RTCIceConnectionState.Completed:
-                        SimpleWebRTCLogger.Log($"ICE Completed - all pairs established");
                         connectionGameObject.Connect();
-
-                        // will only be invoked on offering side
                         OnWebRTCConnection?.Invoke();
-
-
                         connectionGameObject.ConnectWebRTC();
-//                        connectionGameObject.StartVideoTransmission();
-                        // send completed to other peer of connection too
-                        //come back later, we did!
-//                        EnqueueWebSocketMessage(SignalingMessageType.COMPLETE, localPeerId, peerId, $"Peerconnection between {localPeerId} and {peerId} completed.");
                         break;
                     case RTCIceConnectionState.Failed:
-                        SimpleWebRTCLogger.LogError($"ICE Failed - no connectivity possible");
+                        SimpleWebRTCLogger.LogError("ICE connection failed");
                         break;
                     case RTCIceConnectionState.Disconnected:
-                        SimpleWebRTCLogger.LogError($"ICE Disconnected - connection lost");
-                        break;
-                    case RTCIceConnectionState.Closed:
-                        SimpleWebRTCLogger.Log($"ICE Closed - connection terminated with");
+                        SimpleWebRTCLogger.LogError("ICE connection disconnected");
                         break;
                 }
             };
@@ -334,15 +299,10 @@ namespace SimpleWebRTC {
 //            };
         }
 
-#if !USE_NATIVEWEBSOCKET
-        private void HandleMessage(byte[] bytes, int offset, int length) {
-            HandleMessageInternal(bytes, offset, length);
-        }
-#else
+        // Local NativeWebSocket uses this signature
         private void HandleMessage(byte[] bytes) {
             HandleMessageInternal(bytes);
         }
-#endif
 
         public void SendCustomPrompt(string customPrompt) {
             var promptMessage = new outboundPromptSendMessage {
@@ -351,7 +311,6 @@ namespace SimpleWebRTC {
                         should_enrich = true
                     };
             ws.SendText(JsonUtility.ToJson(promptMessage));
-            SimpleWebRTCLogger.Log("Sent Custom prompt: " + customPrompt);
             OnPromptSent?.Invoke(customPrompt);
         }
 
@@ -366,7 +325,6 @@ namespace SimpleWebRTC {
                         should_enrich = true
                     };
             ws.SendText(JsonUtility.ToJson(promptMessage));
-            SimpleWebRTCLogger.Log("Sent prompt: " + promptKey);
             OnPromptSent?.Invoke(promptKey);
         }
 
@@ -374,25 +332,18 @@ namespace SimpleWebRTC {
             if (length == 0) length = bytes.Length - offset; // fallback if length is not specified
             var data = Encoding.UTF8.GetString(bytes, offset, length);
 
-            SimpleWebRTCLogger.Log($"Received WebSocket message: {data}");
-
-
             var readyMessage = JsonUtility.FromJson<inboundReadyMessage>(data);
-            SimpleWebRTCLogger.Log($"Received message: {readyMessage}");
             if(readyMessage.type == "ready"){
-                SimpleWebRTCLogger.Log("Received ready message, handling offer send");
+                // Ready message received, offer will be sent
             }
-
 
             var answerMessage = JsonUtility.FromJson<inboundAnswerMessage>(data);
             if(answerMessage.type == "answer"){
-                SimpleWebRTCLogger.Log("Received answer message, setting remote description");
                 RTCSessionDescription answerSessionDesc = new RTCSessionDescription() {
                     type = RTCSdpType.Answer,
                     sdp = answerMessage.sdp
                 };
                 pc.SetRemoteDescription(ref answerSessionDesc);
-                SimpleWebRTCLogger.Log("Remote description set, starting prompt cycle");
             }
 
             // Handle ICE candidate messages manually due to Unity JsonUtility limitations with nested objects
@@ -581,11 +532,10 @@ namespace SimpleWebRTC {
 //            connectionGameObject.CreateOfferCoroutine();
 //        }
 
-#if USE_NATIVEWEBSOCKET && (!UNITY_WEBGL || UNITY_EDITOR)
+        // Always available for local NativeWebSocket
         public void DispatchMessageQueue() {
             ws?.DispatchMessageQueue();
         }
-#endif
 
         public void AddVideoTrack(VideoStreamTrack videoStreamTrack) {
             

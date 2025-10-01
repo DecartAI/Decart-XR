@@ -55,7 +55,9 @@ namespace SimpleWebRTC {
 
 
         [Header("Connection Setup")]
-        [SerializeField] private string WebSocketServerAddress = "wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage";
+        [SerializeField] private string MirageWebSocket = "wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage";
+        [SerializeField] private string LucyWebSocket = "wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=lucy_v2v_720p_rt";
+        [SerializeField] private bool UseLucyModel = false;
         [SerializeField] private string StunServerAddress = "stun:stun.l.google.com:19302";
         [SerializeField] private string LocalPeerId = "PeerId";
         [SerializeField] private bool IsVideoAudioSender = true;
@@ -272,7 +274,8 @@ namespace SimpleWebRTC {
 
         private void ConnectClient() {
             if (WebSocketConnectionActive && !ConnectionToWebSocketInProgress && !IsWebSocketConnected) {
-                webRTCManager.Connect(WebSocketServerAddress, IsVideoAudioSender, IsVideoAudioReceiver);
+                string selectedEndpoint = UseLucyModel ? LucyWebSocket : MirageWebSocket ;
+                webRTCManager.Connect(selectedEndpoint, IsVideoAudioSender, IsVideoAudioReceiver);
             }
         }
 
@@ -316,6 +319,15 @@ namespace SimpleWebRTC {
 
         public void Disconnect() {
             WebSocketConnectionActive = false;
+        }
+
+        public void SetModelChoice(bool useLucy) {
+            UseLucyModel = useLucy;
+            webRTCManager.SetModelType(useLucy);
+        }
+
+        public string GetSelectedModelName() {
+            return UseLucyModel ? "Lucy" : "Mirage";
         }
 
 

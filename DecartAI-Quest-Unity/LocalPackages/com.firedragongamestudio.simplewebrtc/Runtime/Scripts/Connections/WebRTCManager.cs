@@ -84,7 +84,9 @@ namespace SimpleWebRTC {
         private static string sessionId = Guid.NewGuid().ToString();
 //        private static string sessionId = "00000000-0000-0000-0000-000000000000";
 
-        private static Dictionary<string, string> prompts = new Dictionary<string, string>() {
+        private bool isUsingLucyModel = false;
+
+        private static Dictionary<string, string> miragePrompts = new Dictionary<string, string>() {
               {"Frozen World", "Frozen World World"},
               {"Versailles Palace", "Versailles Palace World"},
               {"Minecraft", "Minecraft World"},
@@ -146,6 +148,24 @@ namespace SimpleWebRTC {
               {"S'mores", "S'mores World"},
               {"K-POP", "K-POP World"},
               {"Dubai Skyline", "Dubai Skyline World"},
+        };
+
+        private static Dictionary<string, string> lucyPrompts = new Dictionary<string, string>() {
+              {"Change to Spiderman", "Transform the man to SpiderMan"},
+              {"Add a Parrot on the Shoulder", "Add a parrot with bright green feathers sitting on the person's shoulder, tilting its head curiously."},
+              {"Change the Hair to Platinum Blonde", "Change the hair color to icy platinum blonde, shimmering with metallic sheen."},
+              {"Dress with a Medieval Knight Armor", "Change the uniform to a medieval knight's armor with metallic reflections and engraved details."},
+              {"Add a Leather Biker Jacket", "Change the jacket to a leather biker jacket with silver zippers and worn textures, making it look rugged and rebellious under a cloudy sky."},
+              {"Transform into a Body Builder", "Transform the human into a bodybuilder."},
+              {"Add a Tuxedo", "Change the shirt to a tuxedo."},
+              {"Add a Wedding Dress", "change the outfit to a white wedding dress."},
+              {"Change to an Elegant Dress", "Dress the person in an elegant black evening dress"},
+              {"Transform Everyone to Polar bear", "Transform the person into a cute polar bear."},
+              {"Change to a Lizard Man", "make me a lizard man"},
+              {"Make everyone be an Anime Character", "Transform the person into a 2D anime character."},
+              {"Add a Chef Uniform", "Dress the person in a white chef uniform with hat"},
+              {"Make me an Alien", "Transform the person into an alien."},
+              {"Add a Summer Dress", "Dress the person in a light floral summer dress"},
         };
 
         private static int promptIndex = 0;
@@ -314,10 +334,18 @@ namespace SimpleWebRTC {
             OnPromptSent?.Invoke(customPrompt);
         }
 
+        public void SetModelType(bool isLucy) {
+            isUsingLucyModel = isLucy;
+            promptIndex = 0; // Reset to first prompt when switching models
+        }
+
         public void SendNextPrompt(bool forward = true) {
-            promptIndex = (promptIndex + (forward ? 1 : -1) + prompts.Count) % prompts.Count;
-            var promptKey = prompts.ElementAt(promptIndex).Key;
-            var promptValue = prompts[promptKey];
+            // Select the correct prompt dictionary based on model type
+            var activePrompts = isUsingLucyModel ? lucyPrompts : miragePrompts;
+
+            promptIndex = (promptIndex + (forward ? 1 : -1) + activePrompts.Count) % activePrompts.Count;
+            var promptKey = activePrompts.ElementAt(promptIndex).Key;
+            var promptValue = activePrompts[promptKey];
 
             var promptMessage = new outboundPromptSendMessage {
                         type = "prompt",

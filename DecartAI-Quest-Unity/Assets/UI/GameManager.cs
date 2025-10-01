@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
 using DG.Tweening;
+using SimpleWebRTC;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,23 +20,33 @@ public class GameManager : MonoBehaviour
     public AudioClip[] forceFieldSounds;
     public AudioSource audioSource;
     public Material introEffectMaterial;
+    public WebRTCConnection webRTCConnection;
 
     private bool didStart = false;
     private bool videoTransmissionPending = false;
     private bool playingForceFieldSounds = false;
     private int currentSoundIndex = 0;
     private bool animatingIntroEffect = false;
+    private bool waitingForModelSelection = false;
+    private bool modelSelected = false;
     
     private void Start()
     {
-        startButton.onClick.AddListener(() => StartExperience());
-        
+        ShowModelSelectionPrompt(); // Auto-start model selection immediately
+
         #if !UNITY_EDITOR
         WebRTCWebcamCanvas.gameObject.SetActive(true);
         RemoveSkybox();
         UnityEngine.XR.XRSettings.eyeTextureResolutionScale = 2f;
         (GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset).renderScale = 2f;
         #endif
+    }
+
+    private void ShowModelSelectionPrompt()
+    {
+        waitingForModelSelection = true;
+        Debug.Log("Model selection: Press A for Mirage or B for Lucy");
+        // Menu stays visible, waiting for A/B button input
     }
     
     private void StartExperience()
@@ -88,11 +99,49 @@ public class GameManager : MonoBehaviour
         }
     }
     
+    private void SelectModelAndStart(bool useLucy)
+    {
+        modelSelected = true;
+        waitingForModelSelection = false;
+
+        // Set the model choice on WebRTC connection
+        if (webRTCConnection != null)
+        {
+            webRTCConnection.SetModelChoice(useLucy);
+            Debug.Log($"Selected model: {webRTCConnection.GetSelectedModelName()}");
+
+            // Trigger the WebSocket connection with selected endpoint
+            webRTCConnection.Connect();
+        }
+        else
+        {
+            Debug.LogError("WebRTCConnection reference is missing!");
+        }
+
+        // Start the experience
+        StartExperience();
+    }
+
     private void Update()
     {
+        // Model selection phase (before experience starts)
+        if (waitingForModelSelection && !modelSelected)
+        {
+            if (OVRInput.GetDown(OVRInput.Button.One)) // A button = Mirage
+            {
+                SelectModelAndStart(useLucy: false);
+            }
+            else if (OVRInput.GetDown(OVRInput.Button.Two)) // B button = Lucy
+            {
+                SelectModelAndStart(useLucy: true);
+            }
+            return; // Don't process other button logic during selection
+        }
+
+        // Original logic (after experience started)
         if (OVRInput.GetDown(OVRInput.Button.One))
         {
-            if (!didStart) StartExperience();
+            if (!didStart) ShowModelSelectionPrompt();
             else ShowWave();
         }
 

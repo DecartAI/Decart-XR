@@ -15,6 +15,7 @@ namespace QuestCameraKit.WebRTC {
         private WebCamTexture _webcamTexture;
         private WebRTCConnection _webRTCConnection;
         public string _pendingCustomPrompt = null;
+        private bool videoReceivedAndReady = false;
 
         private IEnumerator Start() {
             yield return new WaitUntil(() => passthroughCameraManager.WebCamTexture != null && passthroughCameraManager.WebCamTexture.isPlaying);
@@ -33,6 +34,7 @@ namespace QuestCameraKit.WebRTC {
         
         private void OnVideoReceived() {
             Debug.Log("Video transmission received!");
+            videoReceivedAndReady = true; // Enable prompt cycling
             // The WebRTC system will automatically create RawImage components for received video
             // We need to find and copy the texture to our receivedVideoImage
             StartCoroutine(FindReceivedVideo());
@@ -74,7 +76,12 @@ namespace QuestCameraKit.WebRTC {
             }
 
         private void Update() {
-            // Quest controller inputs
+            // Only handle prompt cycling if video has been received
+            if (!videoReceivedAndReady) {
+                return; // Let GameManager handle button input during model selection
+            }
+
+            // Quest controller inputs - Prompt cycling (only after video received)
             if (OVRInput.GetDown(OVRInput.Button.One)) {
                 Debug.Log("WebRTC: A button pressed - Sending next prompt");
                 if (_webRTCConnection != null) {

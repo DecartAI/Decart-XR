@@ -5087,7 +5087,7 @@ MonoBehaviour:
   PromptNameUpdated:
     m_PersistentCalls:
       m_Calls: []
-  WebSocketServerAddress: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage
+  WebSocketServerAddress: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=splice_5b_ar_inference
   StunServerAddress: stun:stun.l.google.com:19302
   LocalPeerId: Quest-PeerId
   IsVideoAudioSender: 1

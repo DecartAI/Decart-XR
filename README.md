@@ -41,7 +41,7 @@ Developed by Decart AI, this Unity application demonstrates real-time AI-powered
 
 ## 🔬 Decart AI Model Integration
 
-This project showcases Decart's `MirageLSD-704px-16FPS` model - the first real-time video-to-video AI transformation system optimized for VR applications. The model processes live camera feeds with specialized parameters for Quest 3 hardware, delivering consistent style transformations while maintaining temporal stability crucial for VR experiences.
+This project showcases Decart's real-time video-to-video AI transformation system optimized for VR applications. The model processes live camera feeds at 30fps and 720p resolution, delivering consistent style transformations while maintaining temporal stability crucial for VR experiences.
 
 ### Prerequisites
 
@@ -159,7 +159,7 @@ In **Other Settings → Script Compilation**:
 Quest Camera → Unity WebRTC → Decart AI → Processed Video → Quest Display
      ↑              ↑              ↑            ↑              ↑
   Camera API    VP8 Encoding   Style AI    VP8 Decoding    UI Rendering
-   Permissions   @16fps/2Mbps  ~50-100ms     Real-time      Real-time
+   Permissions   @30fps/4Mbps  ~50-100ms     Real-time      Real-time
 ```
 
 ### Core Technologies
@@ -198,8 +198,8 @@ Scripting Backend: IL2CPP
 
 ### Performance Specifications
 
-- **Resolution**: 1280×704 @ 16fps
-- **Codec**: VP8 with adaptive bitrate (2-4 Mbps)
+- **Resolution**: 1280×720 @ 30fps
+- **Codec**: VP8 with adaptive bitrate (1-4 Mbps)
 - **Latency**: ~150-200ms end-to-end
 - **Battery**: ~2 hours continuous use
 - **Memory**: ~50MB additional usage

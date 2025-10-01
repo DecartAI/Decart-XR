@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae5a46bda3295124c99b0e6537ac7252, type: 3}
   m_Name: CustomNLP
   m_EditorClassIdentifier: 
-  _clientAccessToken:
+  _clientAccessToken: 325HTG2I52ZCLBKKXCQT442XUHQBPADF
   editorVersionTag: 
   buildVersionTag: 
   _appInfo:
@@ -22,9 +22,9 @@ MonoBehaviour:
     isPrivate: 1
     createdAt: 2025-08-10T04:50:30-0700
     trainingStatus: 1
-    lastTrainDuration: 60
-    lastTrainedAt: 2025-08-10T06:23:00-0700
-    nextTrainAt: 2025-08-10T06:22:00-0700
+    lastTrainDuration: 21
+    lastTrainedAt: 2025-09-28T05:17:08-0700
+    nextTrainAt: 2025-09-28T05:16:47-0700
     intents:
     - id: 1042787771015629
       name: wake_word

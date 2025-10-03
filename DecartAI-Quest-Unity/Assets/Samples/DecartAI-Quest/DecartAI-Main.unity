@@ -4557,12 +4557,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7d9cb92af9ba954882ecb0647c1b74d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  passthroughCameraManager: {fileID: 1436385067}
   canvasRawImage: {fileID: 557677174}
-  connectionGameObject: {fileID: 805715864782633738}
-  receivedVideoImage: {fileID: 0}
   promptNameText: {fileID: 1709945471}
-  _pendingCustomPrompt: 
+  webRtcConnection: {fileID: 6985653293374303736}
+  passthroughCameraManager: {fileID: 1436385067}
 --- !u!1 &1766049787
 GameObject:
   m_ObjectHideFlags: 0
@@ -4838,10 +4836,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startButton: {fileID: 647728290}
-  portal: {fileID: 347471207}
-  streamParent: {fileID: 1635666935}
   menuFader: {fileID: 1122195236}
   textFader: {fileID: 557345623}
+  portal: {fileID: 347471207}
+  streamParent: {fileID: 1635666935}
   passthroughLayer: {fileID: 911098800}
   WebRTCWebcamCanvas: {fileID: 979470606}
   recordingCamera: {fileID: 135406155566937053}
@@ -4854,7 +4852,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 609ef0c58343640e784f8e8145721f15, type: 3}
   audioSource: {fileID: 2081375598}
   introEffectMaterial: {fileID: 2100000, guid: 35471e262a64a4605bb618fbeaa611a2, type: 2}
-  webRTCConnection: {fileID: 6985653293374303736}
+  webRtcConnection: {fileID: 6985653293374303736}
 --- !u!82 &2081375598
 AudioSource:
   m_ObjectHideFlags: 0

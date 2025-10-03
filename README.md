@@ -1,6 +1,5 @@
 # Quest's First RealTime World Transformation App
 
-
 **Built with ❤️ for the Quest developer community, we are introducing the First RealTime World Transformation for VR**
 
 <p align="center">
@@ -9,8 +8,6 @@
   <a href="https://platform.decart.ai">⚡ API Platform</a> •
   <a href="mailto:tom@decart.ai">📧 Technical Support</a>
 </p>
-
-
 
 <p align="center">
   <img src="assets/images/animated-cyberpunk.gif" alt="Cyberpunk AI Transformation" width="400" style="margin-right: 20px;">
@@ -23,7 +20,6 @@
   <img src="assets/images/lego-world.png" alt="LEGO Style" width="200" style="margin: 5px;">
   <img src="assets/images/minecraft.png" alt="Minecraft Style" width="200" style="margin: 5px;">
 </p>
-
 
 Developed by Decart AI, this Unity application demonstrates real-time AI-powered video transformation on Meta Quest 3 devices, enabling users to live inside AI-generated art with sub-200ms latency. Released as an open sourced project for researchers, developers, and the Quest community to explore the intersection of VR and AI.
 
@@ -54,7 +50,7 @@ This project showcases Decart's real-time video-to-video AI transformation syste
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/DecartAI/Decart-XR.git
-   cd QuestCameraKit
+   cd Decart-XR/DecartAI-Quest-Unity
    ```
 
 2. **Open in Unity**
@@ -102,17 +98,14 @@ This project showcases Decart's real-time video-to-video AI transformation syste
 Install these packages via Unity Package Manager:
 
 ### Required Unity Packages
-- **Unity Sentis** - `com.unity.sentis@2.1.2` - AI inference runtime
-- **Meta XR Core SDK** - `com.meta.xr.sdk.core@72.0.0` - Quest platform support
-- **Meta XR Interaction SDK** - `com.meta.xr.sdk.interaction.ovr@72.0.0` - Controller input
-- **Meta XR MRUtility Kit** - `com.meta.xr.mrutilitykit@72.0.0` - Mixed reality utilities
-- **XR Management** - `com.unity.xr.management@4.5.0` - XR system management
-- **Oculus XR Plugin** - `com.unity.xr.oculus@4.5.0` - Quest device support
-- **Universal Render Pipeline** - `com.unity.render-pipelines.universal@17.0.3` - URP rendering
-- **Input System** - `com.unity.inputsystem@1.13.0` - Modern input handling
+- **Meta XR Core SDK** - `com.meta.xr.sdk.core` - Quest platform support
+- **XR Plug-in Management** - `com.unity.xr.management` - XR system management
+- **Oculus XR Plugin** - `com.unity.xr.oculus` - Quest device support
+- **Universal Render Pipeline** - `com.unity.render-pipelines.universal` - URP rendering
+- **Input System** - `com.unity.inputsystem` - Modern input handling
 
 ### Included Local Packages
-- **NativeWebSocket** - `com.endel.nativewebsocket@1.1.5` - WebSocket communication
+- **NativeWebSocket** - `com.endel.nativewebsocket` - WebSocket communication
 - **SimpleWebRTC** - `com.firedragongamestudio.simplewebrtc` - WebRTC integration
 
 ## ⚙️ Unity Project Configuration
@@ -230,7 +223,6 @@ Scripting Backend: IL2CPP
 This project incorporates several open source components and proprietary SDKs. We gratefully acknowledge the following:
 
 ### Unity & Rendering Dependencies
-- **[Unity Sentis](https://docs.unity3d.com/Packages/com.unity.sentis/)** - AI inference runtime (Unity License)
 - **[Meta XR SDK](https://developer.oculus.com/downloads/package/unity-integration/)** - Quest development SDK (Meta License)
 - **[Universal Render Pipeline](https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal/)** - URP rendering (Unity License)
 
@@ -266,8 +258,6 @@ The Decart AI service has its own terms of service. Quest development requires M
 This is an experimental project demonstrating real-time AI video processing capabilities. Performance may vary based on network conditions, device temperature, and AI service availability.
 
 The AI processing service is provided by Decart and subject to their terms of service and availability.
-
-
 
 ## 📞 Contact
 

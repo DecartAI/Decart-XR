@@ -1,117 +1,134 @@
 using PassthroughCameraSamples;
 using SimpleWebRTC;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace QuestCameraKit.WebRTC {
-    public class WebRTCController : MonoBehaviour {
-        [SerializeField] private WebCamTextureManager passthroughCameraManager;
+namespace QuestCameraKit.WebRTC
+{
+    public class WebRTCController : MonoBehaviour
+    {
+        [Tooltip("UI RawImage where the local passthrough camera feed will be displayed.")]
         [SerializeField] private RawImage canvasRawImage;
-        [SerializeField] private GameObject connectionGameObject;
-        [SerializeField] private RawImage receivedVideoImage;
+
+        [Tooltip("UI Text element that shows the current prompt fed to the Decart model.")]
         [SerializeField] private TMP_Text promptNameText;
+
+        [Tooltip("Reference to the WebRTCConnection handling signaling and video streaming.")]
+        [SerializeField] private WebRTCConnection webRtcConnection;
+
+        [Tooltip("Manager for controlling the passthrough WebCamTexture on Quest devices.")]
+        [SerializeField] private WebCamTextureManager passthroughCameraManager;
+
+        private bool _videoReceivedAndReady;
         private WebCamTexture _webcamTexture;
-        private WebRTCConnection _webRTCConnection;
-        public string _pendingCustomPrompt = null;
-        private bool videoReceivedAndReady = false;
+        private readonly Queue<string> _promptQueue = new();
 
-        private IEnumerator Start() {
-            yield return new WaitUntil(() => passthroughCameraManager.WebCamTexture != null && passthroughCameraManager.WebCamTexture.isPlaying);
+        private IEnumerator Start()
+        {
+            if (passthroughCameraManager == null)
+            {
+                passthroughCameraManager = FindFirstObjectByType<WebCamTextureManager>();
+            }
 
-            _webRTCConnection = connectionGameObject.GetComponent<WebRTCConnection>();
+            if (webRtcConnection == null)
+            {
+                webRtcConnection = FindFirstObjectByType<WebRTCConnection>();
+            }
+
+            if (passthroughCameraManager == null || webRtcConnection == null)
+            {
+                Debug.LogError("WebRTCController: Missing required components.");
+                yield break;
+            }
+
+            var timeout = Time.time + 5f;
+            yield return new WaitUntil(() =>
+                (passthroughCameraManager.WebCamTexture != null &&
+                 passthroughCameraManager.WebCamTexture.isPlaying) ||
+                Time.time > timeout);
+
+            if (passthroughCameraManager.WebCamTexture == null || !passthroughCameraManager.WebCamTexture.isPlaying)
+            {
+                Debug.LogError("WebRTCController: Camera failed to start.");
+                yield break;
+            }
+
             _webcamTexture = passthroughCameraManager.WebCamTexture;
-            canvasRawImage.texture = _webcamTexture;
-
-            // Subscribe to video received event and prompt change
-            if (_webRTCConnection != null) {
-                _webRTCConnection.VideoTransmissionReceived.AddListener(OnVideoReceived);
-                _webRTCConnection.PromptNameUpdated.AddListener(UpdatePromptName);
-
+            if (canvasRawImage != null)
+            {
+                canvasRawImage.texture = _webcamTexture;
             }
-        }
-        
-        private void OnVideoReceived() {
-            Debug.Log("Video transmission received!");
-            videoReceivedAndReady = true; // Enable prompt cycling
-            // The WebRTC system will automatically create RawImage components for received video
-            // We need to find and copy the texture to our receivedVideoImage
-            StartCoroutine(FindReceivedVideo());
+
+            webRtcConnection.VideoTransmissionReceived.AddListener(OnVideoReceived);
+            webRtcConnection.PromptNameUpdated.AddListener(UpdatePromptName);
+            Debug.Log("WebRTCController: Initialized successfully.");
         }
 
-        private void UpdatePromptName(string promptKey) {
-            Debug.Log("Initiate Update prompt name");
-            if (promptNameText != null) {
-                promptNameText.text = promptKey;
-                Debug.Log("Updated");
+        private void OnDestroy()
+        {
+            if (webRtcConnection == null)
+            {
+                return;
             }
-            Debug.Log("Didnt update");
+            webRtcConnection.VideoTransmissionReceived.RemoveListener(OnVideoReceived);
+            webRtcConnection.PromptNameUpdated.RemoveListener(UpdatePromptName);
         }
 
-        private IEnumerator FindReceivedVideo() {
-            yield return new WaitForSeconds(0.5f); // Give time for video receiver to be created
-            
-            // Look for automatically created video receiver objects
-            var receivingObjects = GameObject.FindObjectsByType<RawImage>(FindObjectsSortMode.None);
-            foreach (var rawImage in receivingObjects) {
-                if (rawImage.name.Contains("Receiving-RawImage") && rawImage.texture != null) {
-                    Debug.Log($"Found received video: {rawImage.name}");
-                    if (receivedVideoImage != null) {
-                        receivedVideoImage.texture = rawImage.texture;
-                    }
-                    break;
-                }
+        private void OnVideoReceived()
+        {
+            _videoReceivedAndReady = true;
+        }
+
+        private void UpdatePromptName(string promptKey)
+        {
+            if (promptNameText != null)
+            {
+                promptNameText.text = string.IsNullOrEmpty(promptKey) ? "" : promptKey;
             }
         }
 
-//        public void SendCustomPrompt(string customPrompt){
-//            Debug.Log("_webRTCConnection is: " + (_webRTCConnection != null));
-//            Debug.Log("passing custom prompt to _webRTCConnection " + customPrompt);
-//            _webRTCConnection.SendCustomPrompt(customPrompt);
-//        }
+        public void QueueCustomPrompt(string prompt)
+        {
+            if (!string.IsNullOrEmpty(prompt))
+            {
+                _promptQueue.Enqueue(prompt);
+            }
+        }
 
-        public void QueueCustomPrompt(string prompt) {
-                _pendingCustomPrompt = prompt;
+        private void Update()
+        {
+            if (!_videoReceivedAndReady || !webRtcConnection)
+            {
+                return;
             }
 
-        private void Update() {
-            // Only handle prompt cycling if video has been received
-            if (!videoReceivedAndReady) {
-                return; // Let GameManager handle button input during model selection
+            HandleInput();
+            SendQueuedPrompts();
+        }
+
+        private void HandleInput()
+        {
+            if (OVRInput.GetDown(OVRInput.Button.One))
+            {
+                webRtcConnection.SendNextPrompt(true);
             }
 
-            // Quest controller inputs - Prompt cycling (only after video received)
-            if (OVRInput.GetDown(OVRInput.Button.One)) {
-                Debug.Log("WebRTC: A button pressed - Sending next prompt");
-                if (_webRTCConnection != null) {
-                    _webRTCConnection.SendNextPrompt(true);
-                    Debug.Log("WebRTC: SendNextPrompt(true) called successfully");
-                } else {
-                    Debug.LogError("WebRTC: _webRTCConnection is null!");
-                }
+            if (OVRInput.GetDown(OVRInput.Button.Two))
+            {
+                webRtcConnection.SendNextPrompt(false);
             }
+        }
 
-            if (OVRInput.GetDown(OVRInput.Button.Two)) {
-                Debug.Log("WebRTC: B button pressed - Sending previous prompt");
-                if (_webRTCConnection != null) {
-                    _webRTCConnection.SendNextPrompt(false);
-                    Debug.Log("WebRTC: SendNextPrompt(false) called successfully");
-                } else {
-                    Debug.LogError("WebRTC: _webRTCConnection is null!");
-                }
+        private void SendQueuedPrompts()
+        {
+            while (_promptQueue.Count > 0)
+            {
+                var prompt = _promptQueue.Dequeue();
+                webRtcConnection.SendCustomPrompt(prompt);
             }
-
-            if (!string.IsNullOrEmpty(_pendingCustomPrompt)) {
-                Debug.Log("got new custom prompt: " + _pendingCustomPrompt);
-                if (_webRTCConnection != null){
-                    Debug.Log("ws isnt null, sending custom prompt " + _pendingCustomPrompt);
-                    _webRTCConnection.SendCustomPrompt(_pendingCustomPrompt);
-                    _pendingCustomPrompt = null;
-                }
-            }
-
         }
     }
-
 }

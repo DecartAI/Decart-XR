@@ -2,69 +2,134 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Rendering;
 using DG.Tweening;
 using SimpleWebRTC;
+using UnityEngine.Rendering;
 
 public class GameManager : MonoBehaviour
 {
-    public Button startButton;
-    public PortalController portal;
-    public Transform streamParent;
-    public UIFader menuFader;
-    public UIFader textFader;
-    public OVRPassthroughLayer passthroughLayer;
-    public GameObject WebRTCWebcamCanvas;
-    public Camera recordingCamera;
-    public GameObject effectCone;
-    public AudioClip[] forceFieldSounds;
-    public AudioSource audioSource;
-    public Material introEffectMaterial;
-    public WebRTCConnection webRTCConnection;
+    [Header("UI")]
+    [Tooltip("Start button in menu (optional, can trigger experience start manually).")]
+    [SerializeField] private Button startButton;
 
-    private bool didStart = false;
-    private bool videoTransmissionPending = false;
-    private bool playingForceFieldSounds = false;
-    private int currentSoundIndex = 0;
-    private bool animatingIntroEffect = false;
-    private bool waitingForModelSelection = false;
-    private bool modelSelected = false;
+    [Tooltip("UI fader for fading the main menu out at experience start.")]
+    [SerializeField] private UIFader menuFader;
+
+    [Tooltip("UI fader for showing informational text after portal opens.")]
+    [SerializeField] private UIFader textFader;
+
+    [Header("Scene")]
+    [Tooltip("Portal controller used for scaling and revealing the portal.")]
+    [SerializeField] private PortalController portal;
+
+    [Tooltip("Parent transform holding RawImages that display remote video.")]
+    [SerializeField] private Transform streamParent;
+
+    [Tooltip("OVR Passthrough layer to animate transparency when experience starts.")]
+    [SerializeField] private OVRPassthroughLayer passthroughLayer;
+
+    [Tooltip("Canvas displaying local webcam feed for WebRTC.")]
+    [SerializeField] private GameObject WebRTCWebcamCanvas;
+
+    [Tooltip("Camera used for recording or capturing effects (optional).")]
+    [SerializeField] private Camera recordingCamera;
+
+    [Tooltip("Effect cone GameObject that appears during wave/intro effects.")]
+    [SerializeField] private GameObject effectCone;
+
+    [Header("Audio/Visual")]
+    [Tooltip("Set of looping audio clips used for force-field sounds.")]
+    [SerializeField] private AudioClip[] forceFieldSounds;
+
+    [Tooltip("AudioSource used to play force-field and wave sounds.")]
+    [SerializeField] private AudioSource audioSource;
+
+    [Tooltip("Material controlling intro shader effect. Needs '_CustomTime' float property.")]
+    [SerializeField] private Material introEffectMaterial;
+
+    [Header("Networking")]
+    [Tooltip("WebRTC connection that handles model selection and video streaming.")]
+    [SerializeField] private WebRTCConnection webRtcConnection;
+
+    private enum ExperienceState
+    {
+        WaitingForSelection, 
+        Running
+    }
     
+    private ExperienceState _state = ExperienceState.WaitingForSelection;
+
+    private bool _didStart;
+    private int _currentSoundIndex;
+    private bool _animatingIntroEffect;
+    private bool _videoTransmissionPending;
+    private Tween _passthroughTween;
+    private static readonly int CustomTime = Shader.PropertyToID("_CustomTime");
+
     private void Start()
     {
-        ShowModelSelectionPrompt(); // Auto-start model selection immediately
+        ShowModelSelectionPrompt();
 
         #if !UNITY_EDITOR
-        WebRTCWebcamCanvas.gameObject.SetActive(true);
+        if (WebRTCWebcamCanvas != null)
+            WebRTCWebcamCanvas.SetActive(true);
+
         RemoveSkybox();
+
         UnityEngine.XR.XRSettings.eyeTextureResolutionScale = 2f;
-        (GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset).renderScale = 2f;
+
+        if (GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset urp)
+            urp.renderScale = 2f;
         #endif
+    }
+
+    private void OnDestroy()
+    {
+        _passthroughTween?.Kill();
     }
 
     private void ShowModelSelectionPrompt()
     {
-        waitingForModelSelection = true;
+        _state = ExperienceState.WaitingForSelection;
         Debug.Log("Model selection: Press A for Mirage or B for Lucy");
-        // Menu stays visible, waiting for A/B button input
     }
-    
+
+    private void SelectModelAndStart(bool useLucy)
+    {
+        if (!webRtcConnection)
+        {
+            Debug.LogError("WebRTCConnection reference is missing! Cannot start experience.");
+            return;
+        }
+
+        webRtcConnection.SetModelChoice(useLucy);
+        webRtcConnection.Connect();
+        Debug.Log($"Selected model: {webRtcConnection.GetSelectedModelName()}");
+
+        StartExperience();
+    }
+
     private void StartExperience()
     {
-        didStart = true;
-        menuFader.FadeOut();
-        portal.Show();
-        effectCone.gameObject.SetActive(true);
+        _didStart = true;
+        _state = ExperienceState.Running;
 
-        if (passthroughLayer != null)
+        menuFader?.FadeOut();
+        portal?.Show();
+        if (effectCone)
         {
-            DOTween.To(
+            effectCone.SetActive(true);
+        }
+
+        if (passthroughLayer)
+        {
+            _passthroughTween = DOTween.To(
                 () => passthroughLayer.textureOpacity,
                 x => passthroughLayer.textureOpacity = x,
                 0.25f, 1f);
         }
 
-        if (videoTransmissionPending)
+        if (_videoTransmissionPending)
         {
             DOVirtual.DelayedCall(3f, OnVideoTransmissionReceived);
         }
@@ -75,165 +140,155 @@ public class GameManager : MonoBehaviour
 
     public void OnVideoTransmissionReceived()
     {
-        if (!didStart)
+        if (!_didStart)
         {
-            videoTransmissionPending = true;
+            _videoTransmissionPending = true;
             return;
         }
 
-        videoTransmissionPending = false;
+        _videoTransmissionPending = false;
         StopForceFieldSounds();
         StopIntroEffect();
 
-        streamParent.gameObject.SetActive(true);
-        portal.Expand();
-        effectCone.gameObject.SetActive(false);
+        if (streamParent)
+        {
+            streamParent.gameObject.SetActive(true);
+        }
 
-        // Show text and apply portal material when not in wide FoV
-        textFader.FadeIn(delay: 3f);
+        portal?.Expand();
+        if (effectCone)
+        {
+            effectCone.SetActive(false);
+        }
 
-        RawImage[] rawImages = streamParent.GetComponentsInChildren<RawImage>();
-        foreach (RawImage rawImage in rawImages)
+        textFader?.FadeIn(delay: 3f);
+
+        if (!portal || !streamParent)
+        {
+            return;
+        }
+
+        foreach (var rawImage in streamParent.GetComponentsInChildren<RawImage>())
         {
             rawImage.material = portal.portalMaterial;
         }
     }
-    
-    private void SelectModelAndStart(bool useLucy)
-    {
-        modelSelected = true;
-        waitingForModelSelection = false;
-
-        // Set the model choice on WebRTC connection
-        if (webRTCConnection != null)
-        {
-            webRTCConnection.SetModelChoice(useLucy);
-            Debug.Log($"Selected model: {webRTCConnection.GetSelectedModelName()}");
-
-            // Trigger the WebSocket connection with selected endpoint
-            webRTCConnection.Connect();
-        }
-        else
-        {
-            Debug.LogError("WebRTCConnection reference is missing!");
-        }
-
-        // Start the experience
-        StartExperience();
-    }
 
     private void Update()
     {
-        // Model selection phase (before experience starts)
-        if (waitingForModelSelection && !modelSelected)
+        switch (_state)
         {
-            if (OVRInput.GetDown(OVRInput.Button.One)) // A button = Mirage
-            {
-                SelectModelAndStart(useLucy: false);
-            }
-            else if (OVRInput.GetDown(OVRInput.Button.Two)) // B button = Lucy
-            {
-                SelectModelAndStart(useLucy: true);
-            }
-            return; // Don't process other button logic during selection
-        }
+            case ExperienceState.WaitingForSelection:
+                if (OVRInput.GetDown(OVRInput.Button.One)) // Mirage
+                {
+                    SelectModelAndStart(useLucy: false);
+                }
+                else if (OVRInput.GetDown(OVRInput.Button.Two)) // Lucy
+                {
+                    SelectModelAndStart(useLucy: true);
+                }
+                break;
 
-        // Original logic (after experience started)
-        if (OVRInput.GetDown(OVRInput.Button.One))
-        {
-            if (!didStart) ShowModelSelectionPrompt();
-            else ShowWave();
-        }
-
-        if (didStart && OVRInput.GetDown(OVRInput.Button.Two))
-        {
-            ShowWave();
+            case ExperienceState.Running:
+                if (OVRInput.GetDown(OVRInput.Button.One) || OVRInput.GetDown(OVRInput.Button.Two))
+                {
+                    ShowWave();
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 
     private void ShowWave()
     {
-        effectCone.gameObject.SetActive(true);
+        if (effectCone) effectCone.SetActive(true);
         StartCoroutine(DisableEffectConeAfterDelay());
-        audioSource.clip = forceFieldSounds[currentSoundIndex];
-        audioSource.pitch = 0.75f;
-        audioSource.Play();
-        currentSoundIndex = (currentSoundIndex + 1) % forceFieldSounds.Length;
 
-        if (introEffectMaterial != null)
+        if (audioSource && forceFieldSounds.Length > 0)
         {
-            StartIntroEffect();
+            audioSource.clip = forceFieldSounds[_currentSoundIndex];
+            audioSource.pitch = 0.75f;
+            audioSource.Play();
+            _currentSoundIndex = (_currentSoundIndex + 1) % forceFieldSounds.Length;
         }
+
+        StartIntroEffect();
     }
 
     private IEnumerator DisableEffectConeAfterDelay()
     {
         yield return new WaitForSeconds(1.5f);
         StopIntroEffect();
-        effectCone.gameObject.SetActive(false);
+        if (effectCone)
+        {
+            effectCone.SetActive(false);
+        }
     }
-    
+
     private void StartForceFieldSounds()
     {
-        if (forceFieldSounds == null || forceFieldSounds.Length == 0 || audioSource == null)
+        if (forceFieldSounds.Length == 0 || !audioSource)
+        {
             return;
+        }
 
-        playingForceFieldSounds = true;
-        currentSoundIndex = 0;
+        _currentSoundIndex = 0;
         PlayNextForceFieldSound();
     }
 
     private void StopForceFieldSounds()
     {
-        playingForceFieldSounds = false;
+        audioSource?.Stop();
     }
 
     private void PlayNextForceFieldSound()
     {
-        if (!playingForceFieldSounds || forceFieldSounds == null || forceFieldSounds.Length == 0)
+        if (!audioSource || forceFieldSounds.Length == 0)
+        {
             return;
+        }
 
-        audioSource.clip = forceFieldSounds[currentSoundIndex];
+        audioSource.clip = forceFieldSounds[_currentSoundIndex];
         audioSource.pitch = 0.75f;
         audioSource.Play();
 
-        float clipLength = 1.5f;
+        const float clipLength = 1.5f;
         DOVirtual.DelayedCall(clipLength, () =>
         {
-            if (playingForceFieldSounds)
-            {
-                currentSoundIndex = (currentSoundIndex + 1) % forceFieldSounds.Length;
-                PlayNextForceFieldSound();
-            }
+            _currentSoundIndex = (_currentSoundIndex + 1) % forceFieldSounds.Length;
+            PlayNextForceFieldSound();
         });
     }
 
     private void StartIntroEffect()
     {
-        if (introEffectMaterial == null)
+        if (!introEffectMaterial)
+        {
             return;
+        }
 
-        animatingIntroEffect = true;
-        introEffectMaterial.SetFloat("_CustomTime", 0f);
+        _animatingIntroEffect = true;
+        introEffectMaterial.SetFloat(CustomTime, 0f);
         StartCoroutine(UpdateIntroEffectTime());
     }
 
     private void StopIntroEffect()
     {
-        animatingIntroEffect = false;
+        _animatingIntroEffect = false;
     }
 
     private IEnumerator UpdateIntroEffectTime()
     {
-        float startTime = Time.time;
-        while (animatingIntroEffect)
+        var startTime = Time.time;
+        while (_animatingIntroEffect && introEffectMaterial)
         {
-            float elapsedTime = Time.time - startTime;
-            introEffectMaterial.SetFloat("_CustomTime", elapsedTime);
+            var elapsedTime = Time.time - startTime;
+            introEffectMaterial.SetFloat(CustomTime, elapsedTime);
             yield return null;
         }
     }
-
+    
     private void RemoveSkybox()
     {
         RenderSettings.skybox = null;

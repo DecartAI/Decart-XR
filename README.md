@@ -124,7 +124,7 @@ Navigate to **Edit → Project Settings → XR Plug-in Management → Oculus**:
 Navigate to **Edit → Project Settings → Player → Android Settings**:
 
 #### Graphics Settings
-- **Graphics APIs**: **OpenGLES3** only (remove Vulkan if present)
+- **Graphics APIs**: **Vulkan** or **OpenGLES3**
 - **Color Space**: Linear
 - **Rendering Path**: Forward
 

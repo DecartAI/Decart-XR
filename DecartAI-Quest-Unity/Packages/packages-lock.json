@@ -11,7 +11,7 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.webrtc": "3.0.0-pre.8",
+        "com.unity.webrtc": "3.0.0",
         "com.unity.textmeshpro": "3.0.6"
       }
     },
@@ -245,7 +245,7 @@
       }
     },
     "com.unity.webrtc": {
-      "version": "3.0.0-pre.8",
+      "version": "3.0.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {

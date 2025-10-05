@@ -6,7 +6,7 @@
   "unityRelease": "0f1",
   "description": "Unity-based WebRTC wrapper that facilitates peer-to-peer audio, video, and data communication over WebRTC.",
   "dependencies": {
-    "com.unity.webrtc": "3.0.0-pre.8",
+    "com.unity.webrtc": "3.0.0",
     "com.unity.textmeshpro": "3.0.6"
   },
   "keywords": [

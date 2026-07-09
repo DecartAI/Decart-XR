@@ -23,7 +23,7 @@ private bool isProcessing;
 **Constants (PascalCase)**
 ```csharp
 public const int MaxRetryAttempts = 3;
-private const string DefaultWebSocketUrl = "wss://bouncer.mirage.decart.ai/ws";
+private const string DefaultWebSocketUrl = "wss://api3.decart.ai/v1/stream?api_key=YOUR_API_KEY&model=lucy-restyle-2";
 ```
 
 **Local Variables (camelCase)**

@@ -28,7 +28,7 @@ Developed by Decart AI, this Unity application demonstrates real-time AI-powered
 ## ✨ Features
 
 - 🎥 **Real-time Camera Capture** - Direct access to Quest 3 passthrough cameras
-- 🤖 **Dual AI Models** - Mirage (61 world transformations) and Lucy (15 person transformations) with unlimited custom voice descriptions
+- 🤖 **Dual AI Models** - Lucy-Restyle-2 (61 world transformations) and Lucy (15 person transformations) with unlimited custom voice descriptions
 - ⚡ **Ultra-low Latency** - ~150-200ms end-to-end processing time
 - 🌐 **WebRTC Streaming** - Efficient VP8 video encoding at 30fps
 - 📱 **VR-Optimized UI** - Native Quest interface with live preview and processed video display
@@ -80,7 +80,7 @@ This project showcases Decart's real-time video-to-video AI transformation syste
 
 7. **Launch & Enjoy**
    - Grant camera permissions when prompted
-   - Select AI model: Press A for Mirage (world transformations) or B for Lucy (person transformations)
+   - Select AI model: Press A for Lucy-Restyle-2 (world transformations) or B for Lucy (person transformations)
    - Use A/B buttons to cycle through prompts or use your voice to create custom prompts by holding the Index Trigger button
    - See live transformation in real-time!
 
@@ -158,7 +158,7 @@ Quest Camera → Unity WebRTC → Decart AI → Processed Video → Quest Displa
 
 ### Core Technologies
 
-- **[Decart AI](https://mirage.decart.ai/)** - Advanced video-to-video neural networks
+- **[Decart AI](https://decart.ai/)** - Advanced video-to-video neural networks
 - **SimpleWebRTC** - Unity WebRTC integration and video streaming
 - **NativeWebSocket** - Cross-platform WebSocket communication
 - **Quest Passthrough Camera API** - Native camera access on Quest 3
@@ -175,7 +175,7 @@ For detailed technical documentation, see the Wiki
 
 - `WebRTCController.cs` - Main application controller and UI management
 - `WebRTCConnection.cs` - Unity WebRTC lifecycle, video streaming, and model selection
-- `WebRTCManager.cs` - Core WebRTC logic with dual AI prompt libraries (61 Mirage + 15 Lucy)
+- `WebRTCManager.cs` - Core WebRTC logic with dual AI prompt libraries (61 Lucy-Restyle-2 + 15 Lucy)
 - `WebCamTextureManager.cs` - Quest camera integration via Unity API
 - `PassthroughCameraUtils.cs` - Android Camera2 API integration
 - `PassthroughCameraPermissions.cs` - Runtime permission management

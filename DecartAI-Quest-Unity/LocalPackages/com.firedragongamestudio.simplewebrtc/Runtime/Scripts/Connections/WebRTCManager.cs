@@ -86,7 +86,7 @@ namespace SimpleWebRTC {
 
         private bool isUsingLucyModel = false;
 
-        private static Dictionary<string, string> miragePrompts = new Dictionary<string, string>() {
+        private static Dictionary<string, string> lucyRestyle2Prompts = new Dictionary<string, string>() {
               {"Frozen World", "Frozen World World"},
               {"Versailles Palace", "Versailles Palace World"},
               {"Minecraft", "Minecraft World"},
@@ -341,7 +341,7 @@ namespace SimpleWebRTC {
 
         public void SendNextPrompt(bool forward = true) {
             // Select the correct prompt dictionary based on model type
-            var activePrompts = isUsingLucyModel ? lucyPrompts : miragePrompts;
+            var activePrompts = isUsingLucyModel ? lucyPrompts : lucyRestyle2Prompts;
 
             promptIndex = (promptIndex + (forward ? 1 : -1) + activePrompts.Count) % activePrompts.Count;
             var promptKey = activePrompts.ElementAt(promptIndex).Key;

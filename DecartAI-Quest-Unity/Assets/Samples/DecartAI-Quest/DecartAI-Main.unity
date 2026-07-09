@@ -5028,7 +5028,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1977751386122826052, guid: 6212a7793727949dabc2149de5887166, type: 3}
       propertyPath: m_Name
-      value: Mirage-Button
+      value: Lucy-Restyle-2-Button
       objectReference: {fileID: 0}
     - target: {fileID: 4955211613667822975, guid: 6212a7793727949dabc2149de5887166, type: 3}
       propertyPath: m_Pivot.x
@@ -5241,7 +5241,7 @@ MonoBehaviour:
   PromptNameUpdated:
     m_PersistentCalls:
       m_Calls: []
-  MirageWebSocket: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=mirage
+  LucyRestyle2WebSocket: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=lucy-restyle-2
   LucyWebSocket: wss://api3.decart.ai/v1/stream?api_key=G6_q2KFlxTk5UnVX82G_OlY5yMfjStO9a4eQqyV1Vec&model=lucy_v2v_720p_rt
   UseLucyModel: 0
   StunServerAddress: stun:stun.l.google.com:19302

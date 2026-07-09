@@ -93,7 +93,7 @@ public class GameManager : MonoBehaviour
     private void ShowModelSelectionPrompt()
     {
         _state = ExperienceState.WaitingForSelection;
-        Debug.Log("Model selection: Press A for Mirage or B for Lucy");
+        Debug.Log("Model selection: Press A for Lucy-Restyle-2 or B for Lucy");
     }
 
     private void SelectModelAndStart(bool useLucy)
@@ -181,7 +181,7 @@ public class GameManager : MonoBehaviour
         switch (_state)
         {
             case ExperienceState.WaitingForSelection:
-                if (OVRInput.GetDown(OVRInput.Button.One)) // Mirage
+                if (OVRInput.GetDown(OVRInput.Button.One)) // Lucy-Restyle-2
                 {
                     SelectModelAndStart(useLucy: false);
                 }

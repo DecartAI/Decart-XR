@@ -41,9 +41,9 @@ MonoBehaviour:
       - name: wake_word
         id: 1049100697393110
       keywords:
-      - keyword: hey mirage
+      - keyword: hey lucy restyle 2
         synonyms:
-        - hey mirage
+        - hey lucy restyle 2
     traits: []
     versionTags: []
     voices:

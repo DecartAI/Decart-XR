@@ -3,7 +3,7 @@
 **Built with ❤️ for the Quest developer community, we are introducing the First RealTime World Transformation for VR**
 
 <p align="center">
-  <a href="https://discord.gg/decart">🗣️ Join our Discord</a> •
+  <a href="[https://discord.gg/decart](https://discord.gg/fX9a8F3fq)">🗣️ Join our Discord</a> •
   <a href="https://decart.ai">🌐 Visit Decart.ai</a> •
   <a href="https://platform.decart.ai">⚡ API Platform</a> •
   <a href="mailto:tom@decart.ai">📧 Technical Support</a>
@@ -264,7 +264,7 @@ The AI processing service is provided by Decart and subject to their terms of se
 For research collaboration, questions, or technical support:
 
 **Technical Support:** tom@decart.ai
-**Discord Community:** https://discord.gg/decart
+**Discord Community:** [https://discord.gg/decart](https://discord.gg/fX9a8F3fq)
 **Main Website:** https://decart.ai
 **API Platform:** https://platform.decart.ai
 

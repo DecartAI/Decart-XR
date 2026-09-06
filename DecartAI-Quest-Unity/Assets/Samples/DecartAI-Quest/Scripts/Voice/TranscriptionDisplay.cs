@@ -15,35 +15,34 @@ public class VoiceIntentController : MonoBehaviour
     [SerializeField] private TMP_Text fullTranscriptText;
     [SerializeField] private TMP_Text partialTranscriptText;
 
-    private bool appVoiceActive;
-
     private void Awake()
     {
-        // fullTranscriptText.text = partialTranscriptText.text = string.Empty;
+        if (appVoiceExperience == null || webRTCController == null)
+        {
+            Debug.LogError("VoiceIntentController requires both voice and WebRTC references.");
+            enabled = false;
+            return;
+        }
 
         appVoiceExperience.VoiceEvents.OnFullTranscription.AddListener((transcription) => {
             webRTCController.QueueCustomPrompt(transcription);
             Debug.Log("Sent transcription to WebRTC: " + transcription);
-            fullTranscriptText.text = transcription;
+            if (fullTranscriptText != null)
+            {
+                fullTranscriptText.text = transcription;
+            }
         });
 
         appVoiceExperience.VoiceEvents.OnPartialTranscription.AddListener((transcription) => {
-            partialTranscriptText.text = transcription;
+            if (partialTranscriptText != null)
+            {
+                partialTranscriptText.text = transcription;
+            }
         });
-
-        // appVoiceExperience.VoiceEvents.OnRequestCreated.AddListener((request) => {
-        //     appVoiceActive = true;
-        //     Debug.Log("OnRequestCreated");
-        // });
-
-    //     appVoiceExperience.VoiceEvents.OnRequestCompleted.AddListener(() => {
-    //         appVoiceActive = false;
-    //         Debug.Log("OnRequestCompleted");
-    //     });
     }
 
     private void Update() {
-        if (OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger)) {
+        if (appVoiceExperience != null && OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger)) {
             appVoiceExperience.Activate();
         }
     }

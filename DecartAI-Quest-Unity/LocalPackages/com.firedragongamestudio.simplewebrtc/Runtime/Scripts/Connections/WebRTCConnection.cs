@@ -115,6 +115,7 @@ namespace SimpleWebRTC {
         private List<GameObject> tempDestroyGameObjectRefs = new List<GameObject>();
 
         private bool createOffer;
+        private Coroutine videoTransmissionCoroutine;
 
 
         private void Awake() {
@@ -333,8 +334,10 @@ namespace SimpleWebRTC {
 
         public void StartVideoTransmission() {
             SimpleWebRTCLogger.Log("Inside of start video transmisison now");
-            StopCoroutine(StartVideoTransmissionAsync());
-            StartCoroutine(StartVideoTransmissionAsync());
+            if (videoTransmissionCoroutine != null) {
+                StopCoroutine(videoTransmissionCoroutine);
+            }
+            videoTransmissionCoroutine = StartCoroutine(StartVideoTransmissionAsync());
         }
 
         private IEnumerator StartVideoTransmissionAsync() {
@@ -346,6 +349,12 @@ namespace SimpleWebRTC {
             // Wait a couple frames to ensure camera is fully initialized
             yield return null;
             yield return null;
+
+            if (!enabled || !WebSocketConnectionActive || webRTCManager == null || webRTCManager.pc == null) {
+                StreamingCamera.gameObject.SetActive(false);
+                videoTransmissionCoroutine = null;
+                yield break;
+            }
 
             if (IsVideoTransmissionActive) {
                 // for restarting without stopping
@@ -376,6 +385,7 @@ namespace SimpleWebRTC {
 
             // Create offer immediately (matches API-Example.html approach)
             StartCoroutine(CreateOfferWithWarmup());
+            videoTransmissionCoroutine = null;
         }
 
         public IEnumerator CreateOffer() {
@@ -453,10 +463,14 @@ namespace SimpleWebRTC {
 
 
         public void StopVideoTransmission() {
+            if (videoTransmissionCoroutine != null) {
+                StopCoroutine(videoTransmissionCoroutine);
+                videoTransmissionCoroutine = null;
+            }
 
-            StopCoroutine(StartVideoTransmissionAsync());
-
-            StreamingCamera.gameObject.SetActive(false);
+            if (StreamingCamera != null) {
+                StreamingCamera.gameObject.SetActive(false);
+            }
 
             videoStreamTrack?.Stop();
             webRTCManager.RemoveVideoTrack();

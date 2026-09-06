@@ -325,6 +325,11 @@ namespace SimpleWebRTC {
         }
 
         public void SendCustomPrompt(string customPrompt) {
+            if (ws == null || !IsWebSocketConnected || string.IsNullOrWhiteSpace(customPrompt)) {
+                SimpleWebRTCLogger.LogError("Cannot send prompt: WebSocket is not connected or prompt is empty.");
+                return;
+            }
+
             var promptMessage = new outboundPromptSendMessage {
                         type = "prompt",
                         prompt = customPrompt,
@@ -340,6 +345,11 @@ namespace SimpleWebRTC {
         }
 
         public void SendNextPrompt(bool forward = true) {
+            if (ws == null || !IsWebSocketConnected) {
+                SimpleWebRTCLogger.LogError("Cannot send prompt: WebSocket is not connected.");
+                return;
+            }
+
             // Select the correct prompt dictionary based on model type
             var activePrompts = isUsingLucyModel ? lucyPrompts : lucyRestyle2Prompts;
 
@@ -471,16 +481,15 @@ namespace SimpleWebRTC {
         }
 
         public void CloseWebRTC() {
-
-
             foreach (var videoTrackSender in videoTrackSenders) {
                 videoTrackSender.Value.Dispose();
             }
 
-            pc.Close();
-
-
-
+            if (pc != null) {
+                pc.Close();
+                pc.Dispose();
+                pc = null;
+            }
             videoTrackSenders.Clear();
 
         }
@@ -566,6 +575,13 @@ namespace SimpleWebRTC {
         }
 
         public void AddVideoTrack(VideoStreamTrack videoStreamTrack) {
+            if (pc == null || videoStreamTrack == null) {
+                SimpleWebRTCLogger.LogError("Cannot add video track before WebRTC is initialized.");
+                return;
+            }
+
+            RemoveVideoTrack();
+
             
             // optional video stream preview
             if (connectionGameObject.OptionalPreviewRawImage != null) {
@@ -577,6 +593,16 @@ namespace SimpleWebRTC {
         }
 
         public void RemoveVideoTrack() {
+            if (pc == null) {
+                videoTrackSenders.Clear();
+                return;
+            }
+
+            if (videoTrackSenders.TryGetValue(sessionId, out var sender)) {
+                pc.RemoveTrack(sender);
+                sender.Dispose();
+                videoTrackSenders.Remove(sessionId);
+            }
         }
 
 
